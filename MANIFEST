@@ -1,0 +1,13 @@
+CHANGES
+LICENSE
+MANIFEST
+META.yml
+Makefile.PL
+README
+lib/Authen/CAS/Client.pm
+lib/Authen/CAS/Client/Response.pm
+t/MockUserAgent.pm
+t/00-load.t
+t/01-urls.t
+t/02-validate.t
+t/03-proxy.t
