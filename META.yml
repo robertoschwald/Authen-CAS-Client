@@ -1,17 +1,18 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         Authen-CAS-Client
-version:      0.01
-version_from: lib/Authen/CAS/Client.pm
-installdirs:  site
-requires:
-    Carp:                          0
-    HTTP::Request:                 0
-    LWP::UserAgent:                0
+--- #YAML:1.0
+name:                Authen-CAS-Client
+version:             0.02
+abstract:            Provides an easy-to-use interface for authentication
+license:             ~
+generated_by:        ExtUtils::MakeMaker version 6.36
+distribution_type:   module
+requires:     
+    LWP:                           0
     Test::MockObject:              0
     Test::More:                    0
     URI:                           0
     XML::LibXML:                   0
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.30
+meta-spec:
+    url:     http://module-build.sourceforge.net/META-spec-v1.2.html
+    version: 1.2
+author:
+    - jason hord <pravus@cpan.org>

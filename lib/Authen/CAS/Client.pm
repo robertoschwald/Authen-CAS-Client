@@ -1,19 +1,19 @@
 package Authen::CAS::Client;
 
-# $Id: Client.pm 8 2007-10-26 19:39:01Z jhord $
+# $Id: Client.pm 14 2007-10-29 13:28:59Z jhord $
+
+require 5.006_001;
 
 use strict;
 use warnings;
 
-use Carp;
-use HTTP::Request;
 use LWP::UserAgent;
 use URI;
 use URI::QueryParam;
 use XML::LibXML;
 use Authen::CAS::Client::Response;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 #======================================================================
 # constructor
@@ -149,10 +149,8 @@ sub _parse_proxy_response {
 sub _server_request {
   my ( $self, $path, $params ) = @_;
 
-  my $url = $self->_url( $path, $params )->canonical();
-
-  my $request  = HTTP::Request->new( GET => $url );
-  my $response = $self->{_ua}->request( $request );
+  my $url      = $self->_url( $path, $params )->canonical();
+  my $response = $self->{_ua}->get( $url );
 
   unless( $response->is_success() ) {
     return $self->_error(
@@ -175,7 +173,7 @@ sub _url {
   return $url;
 }
 
-sub _v2_validate {
+sub _v20_validate {
   my ( $self, $path, $service, $ticket, %args ) = @_;
 
   my %params = (
@@ -253,12 +251,12 @@ sub validate {
 
 sub service_validate {
   my ( $self, $service, $ticket, %args ) = @_;
-  return $self->_v2_validate( '/serviceValidate', $service, $ticket, %args );
+  return $self->_v20_validate( '/serviceValidate', $service, $ticket, %args );
 }
 
 sub proxy_validate {
   my ( $self, $service, $ticket, %args ) = @_;
-  return $self->_v2_validate( '/proxyValidate', $service, $ticket, %args );
+  return $self->_v20_validate( '/proxyValidate', $service, $ticket, %args );
 }
 
 sub proxy {

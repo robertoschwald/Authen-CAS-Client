@@ -1,14 +1,16 @@
+require 5.006_001;
+
 use strict;
 use warnings;
 
-# $Id: Response.pm 8 2007-10-26 19:39:01Z jhord $
+# $Id: Response.pm 16 2007-11-13 22:42:59Z jhord $
 
 #======================================================================
 # Authen::CAS::Client::Response
 #
 package Authen::CAS::Client::Response;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub new {
   my ( $class, %args ) = @_;
@@ -21,8 +23,8 @@ sub new {
 }
 
 sub is_error   { my ( $self ) = @_; ! defined $self->{_ok} }
-sub is_failure { my ( $self ) = @_; ! $self->{_ok} }
-sub is_success { my ( $self ) = @_;   $self->{_ok} }
+sub is_failure { my ( $self ) = @_;   defined $self->{_ok} && ! $self->{_ok} }
+sub is_success { my ( $self ) = @_;   defined $self->{_ok} &&   $self->{_ok} }
 
 
 #======================================================================
@@ -304,7 +306,7 @@ jason hord E<lt>pravus@cpan.orgE<gt>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2007 jason hord.
+Copyright (c) 2007, jason hord
 
 All rights reserved.
 
@@ -312,13 +314,21 @@ Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
 are met:
 
-  * Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
+=over 2
 
-  * Redistributions in binary form must reproduce the above
-    copyright notice, this list of conditions and the following
-    disclaimer in the documentation and/or other materials provided
-    with the distribution.
+=item *
+
+Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+
+=item *
+
+Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following
+disclaimer in the documentation and/or other materials provided
+with the distribution.
+
+=back
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT

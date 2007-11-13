@@ -14,7 +14,7 @@ sub new {
 
   my $self = $class->SUPER::new();
   $self->fake_new( 'LWP::UserAgent' );
-  $self->mock( request => sub { my ( $self ) = @_; $self->{_response} } );
+  $self->mock( get => sub { my ( $self ) = @_; $self->{_response} } );
 
   return $self;
 }

@@ -1,0 +1,11 @@
+changes from 0.01 to 0.02
+-------------------------
+
+  * added Perl 5.6.1 dependency
+
+  * changed Authen::CAS::Client::Response is_* methods to be more consistent
+    across all response types
+
+  * added tests for better code coverage
+
+  * various minor internal fixups to maintain consistency

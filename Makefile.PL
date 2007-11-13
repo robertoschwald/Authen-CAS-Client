@@ -1,3 +1,5 @@
+require 5.006_001;
+
 use strict;
 use warnings;
 
@@ -11,9 +13,7 @@ WriteMakefile(
     VERSION_FROM  => 'lib/Authen/CAS/Client.pm',
     ABSTRACT_FROM => 'lib/Authen/CAS/Client.pm',
     PREREQ_PM => {
-      'Carp'             => 0,
-      'HTTP::Request'    => 0,
-      'LWP::UserAgent'   => 0,
+      'LWP'              => 0,
       'Test::More'       => 0,
       'Test::MockObject' => 0,
       'URI'              => 0,
