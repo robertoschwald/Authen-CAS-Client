@@ -9,3 +9,12 @@ changes from 0.01 to 0.02
   * added tests for better code coverage
 
   * various minor internal fixups to maintain consistency
+
+
+changes from 0.02 to 0.03
+-------------------------
+
+  * added more tests that were previously not included
+
+  * changed to Module::Install for dist packaging
+

@@ -1,24 +1,18 @@
-require 5.006_001;
-
 use strict;
 use warnings;
 
-use ExtUtils::MakeMaker;
+use inc::Module::Install;
 
-open TOUCH, '>>', 'META.yml'; close TOUCH;
+name 'Authen-CAS-Client';
+license 'MIT';
+all_from 'lib/Authen/CAS/Client.pm';
 
-WriteMakefile(
-    NAME          => 'Authen::CAS::Client',
-    AUTHOR        => 'jason hord <pravus@cpan.org>',
-    VERSION_FROM  => 'lib/Authen/CAS/Client.pm',
-    ABSTRACT_FROM => 'lib/Authen/CAS/Client.pm',
-    PREREQ_PM => {
-      'LWP'              => 0,
-      'Test::More'       => 0,
-      'Test::MockObject' => 0,
-      'URI'              => 0,
-      'XML::LibXML'      => 0,
-    },
-    dist          => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
-    clean         => { FILES => 'Authen-CAS-Client-*' },
-);
+requires 'LWP'         => '0.00';
+requires 'URI'         => '0.00';
+requires 'XML::LibXML' => '0.00';
+
+test_requires 'Test::MockObject' => '0.00';
+test_requires 'Test::More'       => '0.00';
+
+auto_install;
+WriteAll;

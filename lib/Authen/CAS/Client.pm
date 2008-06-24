@@ -1,6 +1,6 @@
 package Authen::CAS::Client;
 
-# $Id: Client.pm 14 2007-10-29 13:28:59Z jhord $
+# $Id: Client.pm 26 2008-06-24 15:32:22Z jhord $
 
 require 5.006_001;
 
@@ -13,7 +13,7 @@ use URI::QueryParam;
 use XML::LibXML;
 use Authen::CAS::Client::Response;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 #======================================================================
 # constructor
@@ -285,8 +285,7 @@ __END__
 
 =head1 NAME
 
-Authen::CAS::Client - Provides an easy-to-use interface for authentication
-using JA-SIG's Central Authentication Service
+Authen::CAS::Client - Provides an easy-to-use interface for authentication using JA-SIG's Central Authentication Service
 
 =head1 SYNOPSIS
 
@@ -516,7 +515,7 @@ L<http://www.ja-sig.org/products/cas/>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2007, jason hord
+Copyright (c) 2007, 2008, jason hord
 
 All rights reserved.
 
