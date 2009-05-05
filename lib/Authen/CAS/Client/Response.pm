@@ -3,7 +3,7 @@ require 5.006_001;
 use strict;
 use warnings;
 
-# $Id: Response.pm 26 2008-06-24 15:32:22Z jhord $
+# $Id: Response.pm 32 2009-05-05 19:15:42Z jhord $
 
 #======================================================================
 # Authen::CAS::Client::Response
@@ -306,7 +306,7 @@ jason hord E<lt>pravus@cpan.orgE<gt>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2007, 2008, jason hord
+Copyright (c) 2007-2009, jason hord
 
 All rights reserved.
 

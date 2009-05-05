@@ -1,6 +1,6 @@
 package Authen::CAS::Client;
 
-# $Id: Client.pm 26 2008-06-24 15:32:22Z jhord $
+# $Id: Client.pm 32 2009-05-05 19:15:42Z jhord $
 
 require 5.006_001;
 
@@ -13,7 +13,7 @@ use URI::QueryParam;
 use XML::LibXML;
 use Authen::CAS::Client::Response;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 #======================================================================
 # constructor
@@ -39,11 +39,10 @@ sub new {
 sub _error {
   my ( $self, $error ) = @_;
 
-  my $response = Authen::CAS::Client::Response::Error->new( error => $error );
-  die $response
+  die $error
     if $self->{_fatal};
 
-  $response;
+  Authen::CAS::Client::Response::Error->new( error => $error );
 }
 
 sub _parse_auth_response {
@@ -369,11 +368,10 @@ following optional parameter:
 
 =item * fatal =E<gt> $BOOLEAN
 
-If this argument is true, the CAS client will C<die()> with an
-C<Authen::CAS::Client::Response::Error> object whenever an error
-occurs.  Otherwise an C<Authen::CAS::Client::Response::Error>
-object is returned, instead.  See L<Authen::CAS::Client::Response>
-for more detail on response objects.
+If this argument is true, the CAS client will C<die()> when an error
+occurs and C<$@> will contain the error message.  Otherwise an
+C<Authen::CAS::Client::Response::Error> object will be returned.  See
+L<Authen::CAS::Client::Response> for more detail on response objects.
 
 =back
 
@@ -515,7 +513,7 @@ L<http://www.ja-sig.org/products/cas/>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2007, 2008, jason hord
+Copyright (c) 2007-2009, jason hord
 
 All rights reserved.
 

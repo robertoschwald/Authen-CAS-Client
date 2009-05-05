@@ -2,7 +2,7 @@
 
 use lib '.';
 
-use Test::More tests => 2;
+use Test::More tests => 1;
 use t::MockUserAgent;
 
 use Authen::CAS::Client;
@@ -16,5 +16,4 @@ my $cas = Authen::CAS::Client->new( CAS_SERVER, fatal => 1 );
 $mock->_response( 404, 'Not found' );
 
 eval { $cas->validate( 'S', 'T' ) };
-ok( UNIVERSAL::isa( $@, 'Authen::CAS::Client::Response::Error' ), "fatal" );
-like( $@->error(), qr/^HTTP request failed: \d+: / );
+like( $@, qr/^HTTP request failed: \d+: / );

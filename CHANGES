@@ -1,3 +1,17 @@
+changes from 0.03 to 0.04
+-------------------------
+
+  * changed fatal behavior to throw strings instead of objects
+
+
+changes from 0.02 to 0.03
+-------------------------
+
+  * added more tests that were previously not included
+
+  * changed to Module::Install for dist packaging
+
+
 changes from 0.01 to 0.02
 -------------------------
 
@@ -9,12 +23,3 @@ changes from 0.01 to 0.02
   * added tests for better code coverage
 
   * various minor internal fixups to maintain consistency
-
-
-changes from 0.02 to 0.03
--------------------------
-
-  * added more tests that were previously not included
-
-  * changed to Module::Install for dist packaging
-
