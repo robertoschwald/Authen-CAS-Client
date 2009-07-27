@@ -3,28 +3,32 @@ require 5.006_001;
 use strict;
 use warnings;
 
-# $Id: Response.pm 32 2009-05-05 19:15:42Z jhord $
-
 #======================================================================
 # Authen::CAS::Client::Response
 #
 package Authen::CAS::Client::Response;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
+
+sub _ATTRIBUTES () { _ok => undef, doc => undef }
 
 sub new {
   my ( $class, %args ) = @_;
 
-  my $self = { };
-  $self->{$_} = $args{$_}
-    for keys %args;
+  my %self = $class->_ATTRIBUTES;
+  for my $attribute ( keys %self ) {
+    $self{$attribute} = $args{$attribute}
+      if exists $args{$attribute};
+  }
 
-  bless $self, $class
+  bless \%self, $class
 }
 
 sub is_error   { my ( $self ) = @_; ! defined $self->{_ok} }
 sub is_failure { my ( $self ) = @_;   defined $self->{_ok} && ! $self->{_ok} }
 sub is_success { my ( $self ) = @_;   defined $self->{_ok} &&   $self->{_ok} }
+
+sub doc        { my ( $self ) = @_; $self->{doc} }
 
 
 #======================================================================
@@ -34,14 +38,9 @@ package Authen::CAS::Client::Response::Error;
 
 use base qw/ Authen::CAS::Client::Response /;
 
-sub new {
-  my ( $class, %args ) = @_;
+sub _ATTRIBUTES () { error => 'An internal error occurred', $_[0]->SUPER::_ATTRIBUTES }
 
-  $class->SUPER::new(
-    _ok   => undef,
-    error => defined $args{error} ? $args{error} : 'An internal error ocurred',
-  );
-}
+sub new { my $class = shift; $class->SUPER::new( @_, _ok => undef ) }
 
 sub error { my ( $self ) = @_; $self->{error} }
 
@@ -53,15 +52,9 @@ package Authen::CAS::Client::Response::Failure;
 
 use base qw/ Authen::CAS::Client::Response /;
 
-sub new {
-  my ( $class, %args ) = @_;
+sub _ATTRIBUTES () { code => undef, message => '', $_[0]->SUPER::_ATTRIBUTES }
 
-  $class->SUPER::new(
-    _ok      => 0,
-    code     => $args{code},
-    message  => defined $args{message} ? $args{message} : '',
-  );
-}
+sub new { my $class = shift; $class->SUPER::new( @_, _ok => 0 ) }
 
 sub code    { my ( $self ) = @_; $self->{code} }
 sub message { my ( $self ) = @_; $self->{message} }
@@ -90,19 +83,7 @@ package Authen::CAS::Client::Response::Success;
 
 use base qw/ Authen::CAS::Client::Response /;
 
-sub _ATTR () { }
-
-sub new {
-  my ( $class, %args ) = @_;
-
-  my %attr = $class->_ATTR;
-  for ( keys %attr ) {
-    $attr{$_} = $args{$_}
-      if exists $args{$_};
-  }
-
-  $class->SUPER::new( _ok => 1, %attr );
-}
+sub new { my $class = shift; $class->SUPER::new( @_, _ok => 1 ) }
 
 
 #======================================================================
@@ -112,7 +93,7 @@ package Authen::CAS::Client::Response::AuthSuccess;
 
 use base qw/ Authen::CAS::Client::Response::Success /;
 
-sub _ATTR () { ( user => undef, iou => undef, proxies => [ ] ) }
+sub _ATTRIBUTES () { user => undef, iou => undef, proxies => [ ], $_[0]->SUPER::_ATTRIBUTES }
 
 sub user    { my ( $self ) = @_; $self->{user} }
 sub iou     { my ( $self ) = @_; $self->{iou} }
@@ -126,13 +107,12 @@ package Authen::CAS::Client::Response::ProxySuccess;
 
 use base qw/ Authen::CAS::Client::Response::Success /;
 
-sub _ATTR() { ( pt => undef ) }
+sub _ATTRIBUTES () { proxy_ticket => undef, $_[0]->SUPER::_ATTRIBUTES }
 
-sub proxy_ticket { my ( $self ) = @_; $self->{pt} }
+sub proxy_ticket { my ( $self ) = @_; $self->{proxy_ticket} }
 
 
-1;
-
+1
 __END__
 
 =head1 NAME
@@ -157,22 +137,30 @@ used directly.
 
 =over 2
 
-=item new %ARGS
+=item B<new %args>
 
-new() creates an instance of an C<Authen::CAS::Client::Response> object
-and assigns its data members according to the values in C<%ARGS>.
+C<new()> creates an instance of an C<Authen::CAS::Client::Response> object
+and assigns its data members according to the values in C<%args>.
 
-=item is_error
+=item B<is_error>
 
-is_error() returns true if the response represents an error object.
+C<is_error()> returns true if the response represents an error object.
 
-=item is_failure
+=item B<is_failure>
 
-is_failure() returns true if the response represents a failure object.
+C<is_failure()> returns true if the response represents a failure object.
 
-=item is_success
+=item B<is_success>
 
-is_success() returns true if the response represents a success object.
+C<is_success()> returns true if the response represents a success object.
+
+=item B<doc>
+
+C<doc()> returns the response document used to create the response object.
+For errors and CAS v1.0 requests this will be the raw text response
+from the server.  Otherwise an L<XML::LibXML> object will be returned.
+This can be used for debugging or retrieving additional information
+from the CAS server's response.
 
 =back
 
@@ -186,14 +174,14 @@ guidelines in the CAS protocol specification.
 
 =over 2
 
-=item new $ERROR
+=item B<new error =E<gt> $error, doc =E<gt> $doc>
 
-new() creates an instance of an C<Authen::CAS::Client::Response::Error>
-object.  C<$ERROR> is the error string.
+C<new()> creates an instance of an C<Authen::CAS::Client::Response::Error>
+object.  C<$error> is the error string.  C<$doc> is the response document.
 
-=item error
+=item B<error>
 
-error() returns the error string.
+C<error()> returns the error string.
 
 =back
 
@@ -206,38 +194,43 @@ specification.
 
 =over 2
 
-=item new $CODE, $MESSAGE
+=item B<new code =E<gt> $code, message =E<gt> $message, doc =E<gt> $doc>
 
-new() creates an instance of an C<Authen::CAS::Client::Response::Failure>
-object.  C<$CODE> is the failure code.  C<$MESSAGE> is the failure message.
+C<new()> creates an instance of an C<Authen::CAS::Client::Response::Failure>
+object.  C<$code> is the failure code.  C<$message> is the failure message.
+C<$doc> is the response document.
 
-=item code
+=item B<code>
 
-code() returns the failure code.
+C<code()> returns the failure code.
 
-=item message
+=item B<message>
 
-message() returns the failure message.
+C<message()> returns the failure message.
 
 =back
 
 =head2 Authen::CAS::Client::Response::AuthFailure
 
-C<Authen::CAS::Client::Response::AuthFailure> is used when a
-C<cas:authenticationFailure> response is received from the CAS server
-during a validation attempt.  When using the CAS v2.0 protocol,
-C<$CODE> and C<$MESSAGE> are set according to what is parsed from the
-server response.  When using the CAS v1.0 protocol, C<$CODE> is set
-to 'V10_AUTH_FAILURE' and C<$MESSAGE> is set to the empty string.
+C<Authen::CAS::Client::Response::AuthFailure> is a subclass of
+C<Authen::CAS::Client::Response::Failure> and is used when a
+validation attempt fails.  When using the CAS v2.0 protocol,
+C<$code>, C<$message> and C<$doc> are set according to what is parsed
+from the server response.  When using the CAS v1.0 protocol, C<$code>
+is set to C<'V10_AUTH_FAILURE'>, C<$message> is set to the empty string
+and C<$doc> is set to the server's response content.
 
 No additional methods are defined.
 
 =head2 Authen::CAS::Client::Response::ProxyFailure
 
-C<Authen::CAS::Client::Response::ProxyFailure> is used when a
-<cas:proxyFailure> response is received from the CAS server
-during a proxy attempt.  C<$CODE> and C<$MESSAGE> are set according
-to what is parsed from the server response.
+C<Authen::CAS::Client::Response::ProxyFailure> is a subclass of
+C<Authen::CAS::Client::Response::Failure> and is used when a
+C<cas:proxyFailure> response is received from the CAS server
+during a proxy attempt.  C<$code>, C<$message> and C<$doc> are set
+according to what is parsed from the server response.
+
+No additional methods are defined.
 
 =head2 Authen::CAS::Client::Response::Success
 
@@ -245,28 +238,43 @@ C<Authen::CAS::Client::Response::Success> is used as base class for other
 success responses.  These correspond to the C<cas:authenticationSuccess> and
 C<cas:proxySuccess> server responses.
 
-No additional methods are defined.
+=over 2
+
+=item B<new doc =E<gt> $doc>
+
+C<new()> creates an instance of an C<Authen::CAS::Client::Response::Success>
+object.  C<$doc> is the response document.
+
+=back
 
 =head2 Authen::CAS::Client::Response::AuthSuccess
 
-C<Authen::CAS::Client::Response::AuthSuccess> is used when a
-C<cas:authenticationSuccess> response is received from the CAS server
-during a validation attempt.
+C<Authen::CAS::Client::Response::AuthSuccess> is a subclass of
+C<Authen::CAS::Client::Response::Success> and is used when
+validation succeeds.
 
 =over 2
 
-=item user
+=item B<new user =E<gt> $user, iou =E<gt> $iou, proxies =E<gt> \@proxies, doc =E<gt> $doc>
 
-user() returns the user name that was contained in the server response.
+C<new()> creates an instance of an C<Authen::CAS::Client::Response::AuthSuccess>
+object.  C<$user> is the username received in the response.  C<$iou>
+is the proxy granting ticket IOU, if present.  C<\@proxies> is the
+list of proxies used during validation, if present.  C<$doc> is the
+response document.
 
-=item iou
+=item B<user>
 
-iou() returns the proxy granting ticket IOU, if it was present in the
+C<user()> returns the user name that was contained in the server response.
+
+=item B<iou>
+
+C<iou()> returns the proxy granting ticket IOU, if it was present in the
 server response.  Otherwise it is set to C<undef>.
 
-=item proxies
+=item B<proxies>
 
-proxies() returns the list of proxies present in the server response.  If
+C<proxies()> returns the list of proxies present in the server response.  If
 no proxies are found, an empty list is returned.  In scalar context an
 array reference will be returned instead.
 
@@ -274,15 +282,22 @@ array reference will be returned instead.
 
 =head2 Authen::CAS::Client::Response::ProxySuccess
 
-C<Authen::CAS::Client::Response::ProxySuccess> is used when a
+C<Authen::CAS::Client::Response::ProxySuccess> is a subclass of
+C<Authen::CAS::Client::Response::Success> and is used when a
 C<cas:proxySuccess> response is received from the CAS server during
 a proxy attempt.
 
 =over 2
 
-=item proxy_ticket
+=item B<new proxy_ticket =E<gt> $proxy_ticket, doc =E<gt> $doc>
 
-proxy_ticket() returns the proxy ticket that was contained in the
+C<new()> creates an instance of an C<Authen::CAS::Client::Response::ProxySuccess>
+object.  C<$proxy_ticket> is the proxy ticket received in the response.
+C<$doc> is the response document.
+
+=item B<proxy_ticket>
+
+C<proxy_ticket()> returns the proxy ticket that was contained in the
 server response.
 
 =back

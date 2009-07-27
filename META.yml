@@ -1,12 +1,15 @@
 ---
-abstract: 'Provides an easy-to-use interface for authentication using JA-SIG''s Central Authentication Service'
+abstract: "Provides an easy-to-use interface for authentication using JA-SIG's Central Authentication Service"
 author:
   - 'jason hord <pravus@cpan.org>'
 build_requires:
+  ExtUtils::MakeMaker: 6.42
   Test::MockObject: 0.00
   Test::More: 0.00
+configure_requires:
+  ExtUtils::MakeMaker: 6.42
 distribution_type: module
-generated_by: 'Module::Install version 0.79'
+generated_by: 'Module::Install version 0.91'
 license: BSD
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -21,4 +24,4 @@ requires:
   URI: 0.00
   XML::LibXML: 0.00
   perl: 5.6.1
-version: 0.04
+version: 0.05

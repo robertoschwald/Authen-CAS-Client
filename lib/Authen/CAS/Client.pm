@@ -1,19 +1,18 @@
 package Authen::CAS::Client;
 
-# $Id: Client.pm 32 2009-05-05 19:15:42Z jhord $
-
 require 5.006_001;
 
 use strict;
 use warnings;
 
+use Authen::CAS::Client::Response;
 use LWP::UserAgent;
 use URI;
 use URI::QueryParam;
 use XML::LibXML;
-use Authen::CAS::Client::Response;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
+
 
 #======================================================================
 # constructor
@@ -24,7 +23,7 @@ sub new {
 
   my $self = {
     _cas   => URI->new( $cas ),
-    _ua    => LWP::UserAgent->new( agent => "WWW-CAS-Service/$VERSION" ),
+    _ua    => LWP::UserAgent->new( agent => "Authen-CAS-Client/$VERSION" ),
     _fatal => $args{fatal} ? 1 : 0,
   };
 
@@ -37,65 +36,74 @@ sub new {
 #
 
 sub _error {
-  my ( $self, $error ) = @_;
+  my ( $self, $error, $doc ) = @_;
 
   die $error
     if $self->{_fatal};
 
-  Authen::CAS::Client::Response::Error->new( error => $error );
+  Authen::CAS::Client::Response::Error->new( error => $error, doc => $doc );
 }
 
 sub _parse_auth_response {
   my ( $self, $xml ) = @_;
 
-  my $root = XML::LibXML->new()->parse_string( $xml );
+  my $doc = eval { XML::LibXML->new->parse_string( $xml ) };
+  return $self->_error( 'Failed to parse XML', $xml )
+    if $@;
 
   my ( $node, $response );
 
-  if( $node = $root->find( '/cas:serviceResponse/cas:authenticationSuccess' )->get_node( 1 ) ) {
-    $response = eval {
-      my $user = $node->find( './cas:user' )->get_node( 1 )->textContent();
+  eval {
+    if( $node = $doc->find( '/cas:serviceResponse/cas:authenticationSuccess' )->get_node( 1 ) ) {
+      $response = eval {
+        my $user = $node->find( './cas:user' )->get_node( 1 )->textContent;
 
-      my $iou = $node->find( './cas:proxyGrantingTicket' )->get_node( 1 );
-      $iou = $iou->textContent()
-        if( defined $iou );
+        my $iou = $node->find( './cas:proxyGrantingTicket' )->get_node( 1 );
+        $iou = $iou->textContent
+          if( defined $iou );
 
-      my $proxies = $node->findnodes( './cas:proxies/cas:proxy' );
-      $proxies = [ map $_->textContent(), @$proxies ]
-        if defined @$proxies;
+        my $proxies = $node->findnodes( './cas:proxies/cas:proxy' );
+        $proxies = [ map $_->textContent, @$proxies ]
+          if defined @$proxies;
 
-      Authen::CAS::Client::Response::AuthSuccess->new(
-        user    => $user,
-        iou     => $iou,
-        proxies => $proxies,
-      );
-    };
-    $response = $self->_error( 'Failed to parse authentication success response' )
-      if $@;
-  }
-  elsif( $node = $root->find( '/cas:serviceResponse/cas:authenticationFailure' )->get_node( 1 ) ) {
-    $response = eval {
-      die
-        unless $node->hasAttribute( 'code' );
-      my $code = $node->getAttribute( 'code' );
-      
-      my $message = $node->textContent();
-      if( defined $message ) {
+        Authen::CAS::Client::Response::AuthSuccess->new(
+          user    => $user,
+          iou     => $iou,
+          proxies => $proxies,
+          doc     => $doc,
+        );
+      };
+
+      $response = $self->_error( 'Failed to parse authentication success response', $doc )
+        if $@;
+    }
+    elsif( $node = $doc->find( '/cas:serviceResponse/cas:authenticationFailure' )->get_node( 1 ) ) {
+      $response = eval {
+        die
+          unless $node->hasAttribute( 'code' );
+        my $code = $node->getAttribute( 'code' );
+        
+        my $message = $node->textContent;
         s/^\s+//, s/\s+\z//
           for $message;
-      }
 
-      Authen::CAS::Client::Response::AuthFailure->new(
-        code    => $code,
-        message => $message,
-      );
-    };
-    $response = $self->_error( 'Failed to parse authentication failure response' )
-      if $@;
-  }
-  else {
-    die;
-  }
+        Authen::CAS::Client::Response::AuthFailure->new(
+          code    => $code,
+          message => $message,
+          doc     => $doc,
+        );
+      };
+
+      $response = $self->_error( 'Failed to parse authentication failure response', $doc )
+        if $@;
+    }
+    else {
+      die;
+    }
+  };
+
+  $response = $self->_error( 'Invalid CAS response', $doc )
+    if $@;
 
   return $response;
 }
@@ -103,44 +111,51 @@ sub _parse_auth_response {
 sub _parse_proxy_response {
   my ( $self, $xml ) = @_;
 
-  my $root = XML::LibXML->new()->parse_string( $xml );
+  my $doc = eval { XML::LibXML->new->parse_string( $xml ) };
+  return $self->_error( 'Failed to parse XML', $xml )
+    if $@;
 
   my ( $node, $response );
 
-  if( $node = $root->find( '/cas:serviceResponse/cas:proxySuccess' )->get_node( 1 ) ) {
-    $response = eval {
-      my $pt = $node->find( './cas:proxyTicket' )->get_node( 1 )->textContent();
+  eval {
+    if( $node = $doc->find( '/cas:serviceResponse/cas:proxySuccess' )->get_node( 1 ) ) {
+      $response = eval {
+        my $proxy_ticket = $node->find( './cas:proxyTicket' )->get_node( 1 )->textContent;
 
-      Authen::CAS::Client::Response::ProxySuccess->new(
-        pt => $pt,
-      );
-    };
-    $response = $self->_error( 'Failed to parse proxy success response' )
-      if $@;
-  }
-  elsif( $node = $root->find( '/cas:serviceResponse/cas:proxyFailure' )->get_node( 1 ) ) {
-    $response = eval {
-      die
-        unless $node->hasAttribute( 'code' );
-      my $code = $node->getAttribute( 'code' );
-      
-      my $message = $node->textContent();
-      if( defined $message ) {
+        Authen::CAS::Client::Response::ProxySuccess->new(
+          proxy_ticket => $proxy_ticket,
+          doc          => $doc,
+        );
+      };
+      $response = $self->_error( 'Failed to parse proxy success response', $doc )
+        if $@;
+      }
+    elsif( $node = $doc->find( '/cas:serviceResponse/cas:proxyFailure' )->get_node( 1 ) ) {
+      $response = eval {
+        die
+          unless $node->hasAttribute( 'code' );
+        my $code = $node->getAttribute( 'code' );
+        
+        my $message = $node->textContent;
         s/^\s+//, s/\s+\z//
           for $message;
-      }
 
-      Authen::CAS::Client::Response::ProxyFailure->new(
-        code    => $code,
-        message => $message,
-      );
-    };
-    $response = $self->_error( 'Failed to parse proxy failure response' )
-      if $@;
-  }
-  else {
-    die;
-  }
+        Authen::CAS::Client::Response::ProxyFailure->new(
+          code    => $code,
+          message => $message,
+          doc     => $doc,
+        );
+      };
+      $response = $self->_error( 'Failed to parse proxy failure response', $doc )
+        if $@;
+    }
+    else {
+      die;
+    }
+  };
+
+  $response = $self->_error( 'Invalid CAS response', $doc )
+    if $@;
 
   return $response;
 }
@@ -148,24 +163,25 @@ sub _parse_proxy_response {
 sub _server_request {
   my ( $self, $path, $params ) = @_;
 
-  my $url      = $self->_url( $path, $params )->canonical();
+  my $url      = $self->_url( $path, $params )->canonical;
   my $response = $self->{_ua}->get( $url );
 
-  unless( $response->is_success() ) {
+  unless( $response->is_success ) {
     return $self->_error(
-      'HTTP request failed: ' . $response->code() . ': ' . $response->message()
+      'HTTP request failed: ' . $response->code . ': ' . $response->message,
+      $response->content
     );
   }
 
-  return $response->content();
+  return $response->content;
 }
 
 sub _url {
   my ( $self, $path, $params ) = @_;
 
-  my $url = $self->{_cas}->clone();
+  my $url = $self->{_cas}->clone;
 
-  $url->path( $url->path() . $path );
+  $url->path( $url->path . $path );
   $url->query_param_append( $_ => $params->{$_} )
     for keys %$params;
 
@@ -175,24 +191,18 @@ sub _url {
 sub _v20_validate {
   my ( $self, $path, $service, $ticket, %args ) = @_;
 
-  my %params = (
-    service => $service,
-    ticket  => $ticket,
-  );
+  my %params = ( service => $service, ticket  => $ticket );
+
   $params{renew} = 'true'
     if $args{renew};
-  $params{pgtUrl} = URI->new( $args{pgtUrl} )->canonical()
+  $params{pgtUrl} = URI->new( $args{pgtUrl} )->canonical
     if defined $args{pgtUrl};
 
   my $content = $self->_server_request( $path, \%params );
   return $content
     if ref $content;
 
-  my $response = eval{ $self->_parse_auth_response( $content ) };
-  return $self->_error( 'Failed to parse server response' )
-    if $@;
-
-  return $response;
+  return $self->_parse_auth_response( $content );
 }
 
 
@@ -203,34 +213,32 @@ sub _v20_validate {
 sub login_url {
   my ( $self, $service, %args ) = @_;
 
-  my %params = (
-    service => $service,
-  );
+  my %params = ( service => $service );
+
   for ( qw/ renew gateway / ) {
     $params{$_} = 'true', last
       if $args{$_};
   }
 
-  return $self->_url( '/login', \%params )->canonical();
+  return $self->_url( '/login', \%params )->canonical;
 }
 
 sub logout_url {
   my ( $self, %args ) = @_;
 
   my %params;
+
   $params{url} = $args{url}
     if defined $args{url};
 
-  return $self->_url( '/logout', \%params )->canonical();
+  return $self->_url( '/logout', \%params )->canonical;
 }
 
 sub validate {
   my ( $self, $service, $ticket, %args ) = @_;
 
-  my %params = (
-    service => $service,
-    ticket  => $ticket,
-  );
+  my %params = ( service => $service, ticket  => $ticket );
+
   $params{renew} = 'true'
     if $args{renew};
 
@@ -238,14 +246,19 @@ sub validate {
   return $content
     if ref $content;
 
-  return $self->_error('Server sent an invalid response')
-    unless $content =~ /^(yes|no)\n(.*)\n$/;
+  my $response;
 
-  my ( $yn, $user ) = ( $1, $2 );
-  return Authen::CAS::Client::Response::AuthFailure->new( code => 'V10_AUTH_FAILURE' ),
-    unless $yn eq 'yes';
+  if( $content =~ /^no\n\n\z/ ) {
+    $response = Authen::CAS::Client::Response::AuthFailure->new( code => 'V10_AUTH_FAILURE', doc => $content );
+  }
+  elsif( $content =~ /^yes\n([^\n]+)\n\z/ ) {
+    $response = Authen::CAS::Client::Response::AuthSuccess->new( user => $1, doc => $content );
+  }
+  else {
+    $response = $self->_error( 'Invalid CAS response', $content );
+  }
 
-  return Authen::CAS::Client::Response::AuthSuccess->new( user => $user );
+  return $response;
 }
 
 sub service_validate {
@@ -261,25 +274,17 @@ sub proxy_validate {
 sub proxy {
   my ( $self, $pgt, $target ) = @_;
 
-  my %params = (
-    pgt           => $pgt,
-    targetService => URI->new( $target ),
-  );
+  my %params = ( pgt => $pgt, targetService => URI->new( $target ) );
 
   my $content = $self->_server_request( '/proxy', \%params );
   return $content
     if ref $content;
 
-  my $response = eval { $self->_parse_proxy_response( $content ) };
-  return $self->_error( 'Failed to parse server response' )
-    if $@;
-
-  return $response;
+  return $self->_parse_proxy_response( $content );
 }
 
 
-1;
-
+1
 __END__
 
 =head1 NAME
@@ -295,55 +300,55 @@ Authen::CAS::Client - Provides an easy-to-use interface for authentication using
 
   # generate an HTTP redirect to the CAS login URL
   my $r = HTTP::Response->new( 302 );
-  $r->header( Location => $cas->login_url() );
+  $r->header( Location => $cas->login_url );
 
 
   # generate an HTTP redirect to the CAS logout URL
   my $r = HTTP::Response->new( 302 );
-  $r->header( Location => $cas->logout_url() );
+  $r->header( Location => $cas->logout_url );
 
 
   # validate a service ticket (CAS v1.0)
   my $r = $cas->validate( $service, $ticket );
-  if( $r->is_success() ) {
-    print "User authenticated as: ", $r->user(), "\n";
+  if( $r->is_success ) {
+    print "User authenticated as: ", $r->user, "\n";
   }
 
   # validate a service ticket (CAS v2.0)
   my $r = $cas->service_validate( $service, $ticket );
-  if( $r->is_success() ) {
-    print "User authenticated as: ", $r->user(), "\n";
+  if( $r->is_success ) {
+    print "User authenticated as: ", $r->user, "\n";
   }
 
 
   # validate a service/proxy ticket (CAS v2.0)
   my $r = $cas->proxy_validate( $service, $ticket );
-  if( $r->is_success() ) {
-    print "User authenticated as: ", $r->user(), "\n";
+  if( $r->is_success ) {
+    print "User authenticated as: ", $r->user, "\n";
     print "Proxied through:\n";
     print "  $_\n"
-      for $r->proxies();
+      for $r->proxies;
   }
 
 
   # validate a service ticket and request a proxy ticket (CAS v2.0)
   my $r = $cas->service_validate( $server, $ticket, pgtUrl => $url );
-  if( $r->is_success() ) {
-    print "User authenticated as: ", $r->user(), "\n";
+  if( $r->is_success ) {
+    print "User authenticated as: ", $r->user, "\n";
 
-    unless( defined $r->iou() ) {
+    unless( defined $r->iou ) {
       print "Service validation for proxying failed\n";
     }
     else {
-      print "Proxy granting ticket IOU: ", $r->iou(), "\n";
+      print "Proxy granting ticket IOU: ", $r->iou, "\n";
 
       ...
       # map IOU to proxy granting ticket via request to pgtUrl
       ...
 
       $r = $cas->proxy( $pgt, $target_service );
-      if( $r->is_success() ) {
-        print "Proxy ticket issued: ", $r->proxy_ticket(), "\n";
+      if( $r->is_success ) {
+        print "Proxy ticket issued: ", $r->proxy_ticket, "\n";
       }
     }
   }
@@ -358,15 +363,15 @@ and v2.0 are supported.
 
 =over 2
 
-=item new $URL [, %ARGS]
+=item B<new $url [, %args]>
 
-new() creates an instance of an C<Authen::CAS::Client> object.  C<$URL>
-refers to the CAS server's base URL.  C<%ARGS> may contain the
+C<new()> creates an instance of an C<Authen::CAS::Client> object.  C<$url>
+refers to the CAS server's base URL.  C<%args> may contain the
 following optional parameter:
 
 =over 4
 
-=item * fatal =E<gt> $BOOLEAN
+=item * fatal =E<gt> $boolean
 
 If this argument is true, the CAS client will C<die()> when an error
 occurs and C<$@> will contain the error message.  Otherwise an
@@ -375,21 +380,21 @@ L<Authen::CAS::Client::Response> for more detail on response objects.
 
 =back
 
-=item login_url $SERVICE [, %ARGS]
+=item B<login_url $service [, %args]>
 
-login_url() returns the CAS server's login URL which can be used to
-redirect users to start the authentication process.  C<$SERVICE> is the
+C<login_url()> returns the CAS server's login URL which can be used to
+redirect users to start the authentication process.  C<$service> is the
 service identifier that will be used during validation requests.
-C<%ARGS> may contain the following optional parameters:
+C<%args> may contain the following optional parameters:
 
 =over 4
 
-=item * renew =E<gt> $BOOLEAN
+=item * renew =E<gt> $boolean
 
 This causes the CAS server to force a user to re-authenticate even if
 an SSO session is already present for that user.
 
-=item * gateway =E<gt> $BOOLEAN
+=item * gateway =E<gt> $boolean
 
 This causes the CAS server to only rely on SSO sessions for authentication.
 If an SSO session is not available for the current user, validation
@@ -397,59 +402,59 @@ will result in a failure.
 
 =back
 
-=item logout_url [%ARGS]
+=item B<logout_url [%args]>
 
-logout_url() returns the CAS server's logout URL which can be used to
-redirect users to end authenticated sessions.  C<%ARGS> may contain
+C<logout_url()> returns the CAS server's logout URL which can be used to
+redirect users to end authenticated sessions.  C<%args> may contain
 the following optional parameter:
 
 =over 4
 
-=item * url =E<gt> $URL
+=item * url =E<gt> $url
 
 If present, the CAS server will present the user with a link to the given
 URL once the user has logged out.
 
 =back
 
-=item validate $SERVICE, $TICKET [, %ARGS]
+=item B<validate $service, $ticket [, %args]>
 
-validate() attempts to validate a service ticket using the CAS v1.0 protocol.
-C<$SERVICE> is the service identifier that was passed to the CAS server
-during the login process.  C<$TICKET> is the service ticket that was
-received after a successful authentication attempt.  Returns an appropriate
-L<Authen::CAS::Response> object.  C<%ARGS> may contain the following optional
-parameter:
+C<validate()> attempts to validate a service ticket using the CAS v1.0
+protocol.  C<$service> is the service identifier that was passed to the
+CAS server during the login process.  C<$ticket> is the service ticket
+that was received after a successful authentication attempt.  Returns an
+appropriate L<Authen::CAS::Response> object.  C<%args> may contain the
+following optional parameter:
 
 =over 4
 
-=item * renew =E<gt> $BOOLEAN
+=item * renew =E<gt> $boolean
 
 This will cause the CAS server to respond with a failure if authentication
 validation was done via a CAS SSO session.
 
 =back
 
-=item service_validate $SERVICE, $TICKET [, %ARGS]
+=item B<service_validate $service, $ticket [, %args]>
 
-service_validate() attempts to validate a service ticket using the CAS v2.0
-protocol.  This is similar to C<validate()>, but allows for greater
-flexibility when there is a need for proxying authentication to back-end
-services.  The C<$SERVICE> and C<$TICKET> parameters are the same as above.
-Returns an appropriate L<Authen::CAS::Response> object.  C<%ARGS> may
-contain the following optional parameters:
+C<service_validate()> attempts to validate a service ticket using the
+CAS v2.0 protocol.  This is similar to C<validate()>, but allows for
+greater flexibility when there is a need for proxying authentication
+to back-end services.  The C<$service> and C<$ticket> parameters are
+the same as above.  Returns an appropriate L<Authen::CAS::Response>
+object.  C<%args> may contain the following optional parameters:
 
 =over 4
 
-=item * renew =E<gt> $BOOLEAN
+=item * renew =E<gt> $boolean
 
 This will cause the CAS server to respond with a failure if authentication
 validation was done via a CAS SSO session.
 
-=item * pgtUrl =E<gt> $URL
+=item * pgtUrl =E<gt> $url
 
 This tells the CAS server that a proxy ticket needs to be issued for
-proxying authentication to a back-end service.  C<$URL> corresponds to
+proxying authentication to a back-end service.  C<$url> corresponds to
 a callback URL that the CAS server will use to verify the service's
 identity.  Per the CAS specification, this URL must be HTTPS.  If this
 verification fails, normal validation will occur, but a proxy granting
@@ -462,35 +467,35 @@ as a parameter to the given URL.
 
 =back
 
-=item proxy_validate $SERVICE, $TICKET [, %ARGS]
+=item B<proxy_validate $service, $ticket [, %args]>
 
-proxy_validate() is almost identical in operation to C<service_validate()>
+C<proxy_validate()> is almost identical in operation to C<service_validate()>
 except that both service tickets and proxy tickets can be used for
 validation and a list of proxies will be provided if proxied authentication
-has been used.  The C<$SERVICE> and C<$TICKET> parameters are the same as
-above.  Returns an appropriate L<Authen::CAS::Response> object.  C<%ARGS>
+has been used.  The C<$service> and C<$ticket> parameters are the same as
+above.  Returns an appropriate L<Authen::CAS::Response> object.  C<%args>
 may contain the following optional parameters:
 
 =over 4
 
-=item * renew =E<gt> $BOOLEAN
+=item * renew =E<gt> $boolean
 
 This is the same as described above.
 
-=item * pgtUrl =E<gt> $URL
+=item * pgtUrl =E<gt> $url
 
 This is the same as described above.
 
 =back
 
-=item proxy $PGT, $TARGET
+=item B<proxy $pgt, $target>
 
-proxy() is used to retrieve a proxy ticket that can be passed to a back-end
-service for proxied authentication.  C<$PGT> is the proxy granting ticket
-that was passed as a parameter to the C<pgtUrl> specified in either
-C<service_validate()> or C<proxy_validate()>.  C<$TARGET> is the
-service identifier for the back-end system that will be using the
-returned proxy ticket for validation.  Returns an appropriate
+C<proxy()> is used to retrieve a proxy ticket that can be passed to
+a back-end service for proxied authentication.  C<$pgt> is the proxy
+granting ticket that was passed as a parameter to the C<pgtUrl>
+specified in either C<service_validate()> or C<proxy_validate()>.
+C<$target> is the service identifier for the back-end system that will
+be using the returned proxy ticket for validation.  Returns an appropriate
 L<Authen::CAS::Response> object.
 
 =back

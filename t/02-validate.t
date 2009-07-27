@@ -2,12 +2,12 @@
 
 use lib '.';
 
-use Test::More tests => 89;
+use Test::More tests => 93;
 use t::MockUserAgent;
 
 use Authen::CAS::Client;
 
-my $mock = Test::MockUserAgent->new();
+my $mock = Test::MockUserAgent->new;
 my $cas  = Authen::CAS::Client->new( 'https://example.com/cas' );
 
 my %t = (
@@ -24,7 +24,7 @@ my %t = (
 
     invalid => {
       r => [ 200, "fake" ],
-      v => [ 'E', qr/^Server sent an invalid response\z/ ],
+      v => [ 'E', qr/^Invalid CAS response\z/ ],
     },
 
     error => {
@@ -85,16 +85,21 @@ my %t = (
     },
 
     error3 => {
-      r => [ 200, '<fake />' ],
-      v => [ 'E', qr/^Failed to parse server response\z/ ],
+      r => [ 200, '<fake xmlns:cas="http://www.yale.edu/tp/cas" />' ],
+      v => [ 'E', qr/^Invalid CAS response\z/ ],
     },
 
     error4 => {
-      r => [ 200, 'fake' ],
-      v => [ 'E', qr/^Failed to parse server response\z/ ],
+      r => [ 200, '<fake />' ],
+      v => [ 'E', qr/^Invalid CAS response\z/ ],
     },
 
     error5 => {
+      r => [ 200, 'fake' ],
+      v => [ 'E', qr/^Failed to parse XML\z/ ],
+    },
+
+    error6 => {
       r => [ 404, 'fake' ],
       v => [ 'E', qr/HTTP request failed: \d+: / ],
     },
@@ -120,27 +125,27 @@ sub _v_response {
   if( $o eq 'S' ) {
     my ( $u, $i, $p ) = @a;
     isa_ok( $r, 'Authen::CAS::Client::Response::AuthSuccess', $t );
-    is( $r->user(), $u, $t );
+    is( $r->user, $u, $t );
     if( defined $i ) {
-      is( $r->iou(), $i, $t );
+      is( $r->iou, $i, $t );
     }
     else {
-      ok( !defined $r->iou() );
+      ok( !defined $r->iou );
     }
     $p = [ ]
       unless defined $p;
-    is( join( ',', $r->proxies() ), join( ',', @$p ), $t );
+    is( join( ',', $r->proxies ), join( ',', @$p ), $t );
   }
   elsif( $o eq 'F' ) {
     my ( $c, $m ) = @a;
     isa_ok( $r, 'Authen::CAS::Client::Response::AuthFailure', $t );
-    is( $r->code(), $c, $t );
-    is( $r->message(), $m, $t );
+    is( $r->code, $c, $t );
+    is( $r->message, $m, $t );
   }
   else {
     my ( $e ) = @a;
     isa_ok( $r, 'Authen::CAS::Client::Response::Error', $t );
-    like( $r->error(), $e, $t );
+    like( $r->error, $e, $t );
   }
 }
 

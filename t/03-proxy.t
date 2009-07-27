@@ -2,12 +2,12 @@
 
 use lib '.';
 
-use Test::More tests => 21;
+use Test::More tests => 23;
 use t::MockUserAgent;
 
 use Authen::CAS::Client;
 
-my $mock = Test::MockUserAgent->new();
+my $mock = Test::MockUserAgent->new;
 my $cas  = Authen::CAS::Client->new( 'https://example.com/cas' );
 
 my %t = (
@@ -43,16 +43,21 @@ my %t = (
     },
 
     error3 => {
-      r => [ 200, '<fake />' ],
-      v => [ 'E', qr/^Failed to parse server response\z/ ],
+      r => [ 200, '<fake xmlns:cas="http://www.yale.edu/tp/cas" />' ],
+      v => [ 'E', qr/^Invalid CAS response\z/ ],
     },
 
     error4 => {
-      r => [ 200, 'fake' ],
-      v => [ 'E', qr/^Failed to parse server response\z/ ],
+      r => [ 200, '<fake />' ],
+      v => [ 'E', qr/^Invalid CAS response\z/ ],
     },
 
     error5 => {
+      r => [ 200, 'fake' ],
+      v => [ 'E', qr/^Failed to parse XML\z/ ],
+    },
+
+    error6 => {
       r => [ 404, 'fake' ],
       v => [ 'E', qr/HTTP request failed: \d+: / ],
     },
@@ -76,18 +81,18 @@ sub _v_response {
   if( $o eq 'S' ) {
     my ( $p ) = @a;
     isa_ok( $r, 'Authen::CAS::Client::Response::ProxySuccess', $t );
-    is( $r->proxy_ticket(), $p, $t );
+    is( $r->proxy_ticket, $p, $t );
   }
   elsif( $o eq 'F' ) {
     my ( $c, $m ) = @a;
     isa_ok( $r, 'Authen::CAS::Client::Response::ProxyFailure', $t );
-    is( $r->code(), $c, $t );
-    is( $r->message(), $m, $t );
+    is( $r->code, $c, $t );
+    is( $r->message, $m, $t );
   }
   else {
     my ( $e ) = @a;
     isa_ok( $r, 'Authen::CAS::Client::Response::Error', $t );
-    like( $r->error(), $e, $t );
+    like( $r->error, $e, $t );
   }
 }
 

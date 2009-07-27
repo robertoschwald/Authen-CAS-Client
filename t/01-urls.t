@@ -46,7 +46,7 @@ sub url_is {
 
   is( $x->scheme . '://' . $x->authority . $x->path, $y->scheme . '://' . $y->authority . $y->path, $test );
 
-  @x = $x->query_param(); @y = $y->query_param();
+  @x = $x->query_param; @y = $y->query_param;
 
   ok( @x == @y, $test );
   is( $x->query_param( $_ ), $y->query_param( $_ ), $test )
@@ -60,5 +60,5 @@ sub _url {
   $url->query_param_append( $_ => $params{$_} )
     for keys %params;
 
-  return $url->canonical();
+  return $url->canonical;
 }
