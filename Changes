@@ -1,3 +1,11 @@
+changes from 0.05 to 0.06
+-------------------------
+
+ * fixed a bug when using defined on an array
+
+ * minor documentation fixup referencing incorrect package for response objects
+
+
 changes from 0.04 to 0.05
 -------------------------
 
@@ -8,6 +16,7 @@ changes from 0.04 to 0.05
   * updated perldocs with new functionality and consistency fixes
 
   * changed user-agent string to reflect module name
+
 
 changes from 0.03 to 0.04
 -------------------------
@@ -34,3 +43,4 @@ changes from 0.01 to 0.02
   * added tests for better code coverage
 
   * various minor internal fixups to maintain consistency
+

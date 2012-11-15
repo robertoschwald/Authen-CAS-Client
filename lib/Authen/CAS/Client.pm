@@ -11,7 +11,7 @@ use URI;
 use URI::QueryParam;
 use XML::LibXML;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 
 #======================================================================
@@ -64,7 +64,7 @@ sub _parse_auth_response {
 
         my $proxies = $node->findnodes( './cas:proxies/cas:proxy' );
         $proxies = [ map $_->textContent, @$proxies ]
-          if defined @$proxies;
+          if defined $proxies;
 
         Authen::CAS::Client::Response::AuthSuccess->new(
           user    => $user,
@@ -423,8 +423,8 @@ C<validate()> attempts to validate a service ticket using the CAS v1.0
 protocol.  C<$service> is the service identifier that was passed to the
 CAS server during the login process.  C<$ticket> is the service ticket
 that was received after a successful authentication attempt.  Returns an
-appropriate L<Authen::CAS::Response> object.  C<%args> may contain the
-following optional parameter:
+appropriate L<Authen::CAS::Client::Response> object.  C<%args> may
+contain the following optional parameter:
 
 =over 4
 
@@ -441,7 +441,7 @@ C<service_validate()> attempts to validate a service ticket using the
 CAS v2.0 protocol.  This is similar to C<validate()>, but allows for
 greater flexibility when there is a need for proxying authentication
 to back-end services.  The C<$service> and C<$ticket> parameters are
-the same as above.  Returns an appropriate L<Authen::CAS::Response>
+the same as above.  Returns an appropriate L<Authen::CAS::Client::Response>
 object.  C<%args> may contain the following optional parameters:
 
 =over 4
@@ -473,8 +473,8 @@ C<proxy_validate()> is almost identical in operation to C<service_validate()>
 except that both service tickets and proxy tickets can be used for
 validation and a list of proxies will be provided if proxied authentication
 has been used.  The C<$service> and C<$ticket> parameters are the same as
-above.  Returns an appropriate L<Authen::CAS::Response> object.  C<%args>
-may contain the following optional parameters:
+above.  Returns an appropriate L<Authen::CAS::Client::Response> object.
+C<%args> may contain the following optional parameters:
 
 =over 4
 
@@ -496,7 +496,7 @@ granting ticket that was passed as a parameter to the C<pgtUrl>
 specified in either C<service_validate()> or C<proxy_validate()>.
 C<$target> is the service identifier for the back-end system that will
 be using the returned proxy ticket for validation.  Returns an appropriate
-L<Authen::CAS::Response> object.
+L<Authen::CAS::Client::Response> object.
 
 =back
 
