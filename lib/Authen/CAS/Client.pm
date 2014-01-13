@@ -11,7 +11,7 @@ use URI;
 use URI::QueryParam;
 use XML::LibXML;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 
 #======================================================================
@@ -287,6 +287,8 @@ sub proxy {
 1
 __END__
 
+=pod
+
 =head1 NAME
 
 Authen::CAS::Client - Provides an easy-to-use interface for authentication using JA-SIG's Central Authentication Service
@@ -355,69 +357,55 @@ Authen::CAS::Client - Provides an easy-to-use interface for authentication using
 
 =head1 DESCRIPTION
 
-The C<Authen::CAS::Client> module provides a simple interface for
+The Authen::CAS::Client module provides a simple interface for
 authenticating users using JA-SIG's CAS protocol.  Both CAS v1.0
 and v2.0 are supported.
 
 =head1 METHODS
 
-=over 2
-
-=item B<new $url [, %args]>
+=head2 new $url [, %args]
 
 C<new()> creates an instance of an C<Authen::CAS::Client> object.  C<$url>
 refers to the CAS server's base URL.  C<%args> may contain the
 following optional parameter:
 
-=over 4
-
-=item * fatal =E<gt> $boolean
+=head3 fatal =E<gt> $boolean
 
 If this argument is true, the CAS client will C<die()> when an error
 occurs and C<$@> will contain the error message.  Otherwise an
 C<Authen::CAS::Client::Response::Error> object will be returned.  See
 L<Authen::CAS::Client::Response> for more detail on response objects.
 
-=back
-
-=item B<login_url $service [, %args]>
+=head2 login_url $service [, %args]
 
 C<login_url()> returns the CAS server's login URL which can be used to
 redirect users to start the authentication process.  C<$service> is the
 service identifier that will be used during validation requests.
 C<%args> may contain the following optional parameters:
 
-=over 4
-
-=item * renew =E<gt> $boolean
+=head3 renew =E<gt> $boolean
 
 This causes the CAS server to force a user to re-authenticate even if
 an SSO session is already present for that user.
 
-=item * gateway =E<gt> $boolean
+=head3 gateway =E<gt> $boolean
 
 This causes the CAS server to only rely on SSO sessions for authentication.
 If an SSO session is not available for the current user, validation
 will result in a failure.
 
-=back
-
-=item B<logout_url [%args]>
+=head2 logout_url [%args]
 
 C<logout_url()> returns the CAS server's logout URL which can be used to
 redirect users to end authenticated sessions.  C<%args> may contain
 the following optional parameter:
 
-=over 4
-
-=item * url =E<gt> $url
+=head3 url =E<gt> $url
 
 If present, the CAS server will present the user with a link to the given
 URL once the user has logged out.
 
-=back
-
-=item B<validate $service, $ticket [, %args]>
+=head2 validate $service, $ticket [, %args]
 
 C<validate()> attempts to validate a service ticket using the CAS v1.0
 protocol.  C<$service> is the service identifier that was passed to the
@@ -426,16 +414,12 @@ that was received after a successful authentication attempt.  Returns an
 appropriate L<Authen::CAS::Client::Response> object.  C<%args> may
 contain the following optional parameter:
 
-=over 4
-
-=item * renew =E<gt> $boolean
+=head3 renew =E<gt> $boolean
 
 This will cause the CAS server to respond with a failure if authentication
 validation was done via a CAS SSO session.
 
-=back
-
-=item B<service_validate $service, $ticket [, %args]>
+=head2 service_validate $service, $ticket [, %args]
 
 C<service_validate()> attempts to validate a service ticket using the
 CAS v2.0 protocol.  This is similar to C<validate()>, but allows for
@@ -444,14 +428,12 @@ to back-end services.  The C<$service> and C<$ticket> parameters are
 the same as above.  Returns an appropriate L<Authen::CAS::Client::Response>
 object.  C<%args> may contain the following optional parameters:
 
-=over 4
-
-=item * renew =E<gt> $boolean
+=head3 renew =E<gt> $boolean
 
 This will cause the CAS server to respond with a failure if authentication
 validation was done via a CAS SSO session.
 
-=item * pgtUrl =E<gt> $url
+=head3 pgtUrl =E<gt> $url
 
 This tells the CAS server that a proxy ticket needs to be issued for
 proxying authentication to a back-end service.  C<$url> corresponds to
@@ -465,9 +447,7 @@ service verification attempt.  The returned proxy granting ticket IOU
 can then be used to retrieve the proxy granting ticket that was passed
 as a parameter to the given URL.
 
-=back
-
-=item B<proxy_validate $service, $ticket [, %args]>
+=head2 proxy_validate $service, $ticket [, %args]
 
 C<proxy_validate()> is almost identical in operation to C<service_validate()>
 except that both service tickets and proxy tickets can be used for
@@ -476,19 +456,15 @@ has been used.  The C<$service> and C<$ticket> parameters are the same as
 above.  Returns an appropriate L<Authen::CAS::Client::Response> object.
 C<%args> may contain the following optional parameters:
 
-=over 4
-
-=item * renew =E<gt> $boolean
+=head3 renew =E<gt> $boolean
 
 This is the same as described above.
 
-=item * pgtUrl =E<gt> $url
+=head3 pgtUrl =E<gt> $url
 
 This is the same as described above.
 
-=back
-
-=item B<proxy $pgt, $target>
+=head2 proxy $pgt, $target
 
 C<proxy()> is used to retrieve a proxy ticket that can be passed to
 a back-end service for proxied authentication.  C<$pgt> is the proxy
@@ -497,8 +473,6 @@ specified in either C<service_validate()> or C<proxy_validate()>.
 C<$target> is the service identifier for the back-end system that will
 be using the returned proxy ticket for validation.  Returns an appropriate
 L<Authen::CAS::Client::Response> object.
-
-=back
 
 =head1 BUGS
 
@@ -511,47 +485,35 @@ jason hord E<lt>pravus@cpan.orgE<gt>
 
 =head1 SEE ALSO
 
-L<Authen::CAS::Client::Response>
+=over 4
+
+=item L<Authen::CAS::Client::Response>
+
+=back
 
 More information about CAS can be found at JA-SIG's CAS homepage:
 L<http://www.ja-sig.org/products/cas/>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2007-2009, jason hord
+Copyright (c) 2007-2014, jason hord
 
-All rights reserved.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
 
-=over 2
-
-=item *
-
-Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-
-=item *
-
-Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following
-disclaimer in the documentation and/or other materials provided
-with the distribution.
-
-=back
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
 
 =cut

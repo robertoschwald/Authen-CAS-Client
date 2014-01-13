@@ -1,5 +1,16 @@
+changes from 0.06 to 0.07
+=========================
+
+  * changed license to MIT for consistency with other module distributions
+
+  * removed MYMETA.yml and MYMETA.json from module distribution
+    per CPAN standards
+
+  * updated documentation to reflect new formatting standards
+
+
 changes from 0.05 to 0.06
--------------------------
+=========================
 
  * fixed a bug when using defined on an array
 
@@ -7,7 +18,7 @@ changes from 0.05 to 0.06
 
 
 changes from 0.04 to 0.05
--------------------------
+=========================
 
   * added doc() accessor to response types
 
@@ -19,13 +30,13 @@ changes from 0.04 to 0.05
 
 
 changes from 0.03 to 0.04
--------------------------
+=========================
 
   * changed fatal behavior to throw strings instead of objects
 
 
 changes from 0.02 to 0.03
--------------------------
+=========================
 
   * added more tests that were previously not included
 
@@ -33,7 +44,7 @@ changes from 0.02 to 0.03
 
 
 changes from 0.01 to 0.02
--------------------------
+=========================
 
   * added Perl 5.6.1 dependency
 
