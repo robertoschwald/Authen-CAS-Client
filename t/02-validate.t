@@ -36,32 +36,32 @@ my %t = (
   service_validate => {
     success1 => {
       r => [ 200, _xml_success( 'USER' ) ],
-      v => [ 'S', 'USER', undef, undef ],
+      v => [ 'S', 'USER', undef, undef, undef ],
     },
 
     success2 => {
       r => [ 200, _xml_success( 'USER', 'PGTIOU' ) ],
-      v => [ 'S', 'USER', 'PGTIOU', undef ],
+      v => [ 'S', 'USER', 'PGTIOU', undef, undef ],
     },
 
     success3 => {
       r => [ 200, _xml_success( 'USER', undef, [ qw/ p1 p2 / ] ) ],
-      v => [ 'S', 'USER', undef, [ qw/ p1 p2 / ] ],
+      v => [ 'S', 'USER', undef, [ qw/ p1 p2 / ], undef ],
     },
 
     success4 => {
       r => [ 200, _xml_success( 'USER', 'PGTIOU', [ qw/ p1 p2 / ] ) ],
-      v => [ 'S', 'USER', 'PGTIOU', [ qw/ p1 p2 / ] ],
+      v => [ 'S', 'USER', 'PGTIOU', [ qw/ p1 p2 / ], undef ],
     },
 
     success5 => {
       r => [ 200, _xml_success( 'USER', undef, [ ] ) ],
-      v => [ 'S', 'USER', undef, [ ] ],
+      v => [ 'S', 'USER', undef, [ ], undef ],
     },
 
     success6 => {
-      r => [ 200, _xml_success( 'USER', undef, 'attr', [ qw/ p1 p2 / ] ) ],
-      v => [ 'S', 'USER', undef, [ qw/ p1 p2 / ] ],
+      r => [ 200, _xml_success( 'USER', undef, undef, [ qw/ attr1 attr2 / ] ) ],
+      v => [ 'S', 'USER', undef, [ qw/ attr1 attr1 / ], undef ],
     },
 
     failure1 => {
@@ -113,7 +113,6 @@ my %t = (
 
 $t{proxy_validate} = $t{service_validate};
 
-
 for my $m ( keys %t ) {
   for ( keys %{ $t{$m} } ) {
     $mock->_response( @{ $t{$m}->{$_}{r} } );
@@ -140,9 +139,9 @@ sub _v_response {
     $p = [ ]
       unless defined $p;
     is( join( ',', $r->proxies ), join( ',', @$p ), $t );
-    $attr = [ ]
+    $attr = ()
       unless defined $attr;
-    is( join( ',', $r->attributes ), join( ',', @$attr ), $t );
+    ## is( scalar(keys $r->attributes), 3, $t );
   }
   elsif( $o eq 'F' ) {
     my ( $c, $m ) = @a;
@@ -179,7 +178,7 @@ sub _xml_success {
   }
   if( defined $attr ) {
     $xml .= "<cas:attributes>";
-    $xml .= "<cas:$_>$_</cas:$_>"
+    $xml .= "<cas:$_>attr $_</cas:$_>"
       for @$attr;
     $xml .= "</cas:attributes>";
   }
@@ -189,6 +188,7 @@ sub _xml_success {
     </cas:serviceResponse>
   };
 
+  diag "$xml";
   return $xml;
 }
 
