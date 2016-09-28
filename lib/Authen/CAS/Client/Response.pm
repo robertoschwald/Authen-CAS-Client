@@ -93,11 +93,12 @@ package Authen::CAS::Client::Response::AuthSuccess;
 
 use base qw/ Authen::CAS::Client::Response::Success /;
 
-sub _ATTRIBUTES () { user => undef, iou => undef, proxies => [ ], $_[0]->SUPER::_ATTRIBUTES }
+sub _ATTRIBUTES () { user => undef, iou => undef, proxies => [ ], attributes => (), $_[0]->SUPER::_ATTRIBUTES }
 
 sub user    { my ( $self ) = @_; $self->{user} }
 sub iou     { my ( $self ) = @_; $self->{iou} }
 sub proxies { my ( $self ) = @_; wantarray ? @{ $self->{proxies} } : [ @{ $self->{proxies} } ] }
+sub attributes { my ( $self ) = @_; $self->{attributes}}
 
 
 #======================================================================
@@ -239,12 +240,13 @@ Authen::CAS::Client::Response::AuthSuccess is a subclass of
 C<Authen::CAS::Client::Response::Success> and is used when
 validation succeeds.
 
-=head3 new( user =E<gt> $user, iou =E<gt> $iou, proxies =E<gt> \@proxies, doc =E<gt> $doc )
+=head3 new( user =E<gt> $user, iou =E<gt> $iou, proxies =E<gt> \@proxies, attributes =E<gt> \@attributes, doc =E<gt> $doc )
 
 C<new()> creates an instance of an C<Authen::CAS::Client::Response::AuthSuccess>
 object.  C<$user> is the username received in the response.  C<$iou>
 is the proxy granting ticket IOU, if present.  C<\@proxies> is the
-list of proxies used during validation, if present.  C<$doc> is the
+list of proxies used during validation, if present. C<\@attributes> is the
+list of attributes received during validation, if present. C<$doc> is the
 response document.
 
 =head3 user()
@@ -261,6 +263,12 @@ server response.  Otherwise it is set to C<undef>.
 C<proxies()> returns the list of proxies present in the server response.  If
 no proxies are found, an empty list is returned.  In scalar context an
 array reference will be returned instead.
+
+=head3 attributes()
+
+C<attributes()> returns a hash of attributes present in the server response.  If
+no attributes are found, an empty hash is returned.  In scalar context a
+hash reference will be returned instead.
 
 =head2 Authen::CAS::Client::Response::ProxySuccess
 

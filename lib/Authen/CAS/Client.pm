@@ -11,7 +11,7 @@ use URI;
 use URI::QueryParam;
 use XML::LibXML;
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 
 #======================================================================
@@ -66,10 +66,23 @@ sub _parse_auth_response {
         $proxies = [ map $_->textContent, @$proxies ]
           if defined $proxies;
 
+        my %casAttrs;
+        my $attrsNode = $node->find( './cas:attributes' );
+        if ($attrsNode) {
+          my $attrs = $attrsNode.childNodes();
+		  for(my $i=0;$i<@$attrs;$i++) {
+			my $attr = $attrs->get_node($i);
+			my $name = $attr->nodeName;
+			my $value = $attr->textContent;
+			$casAttrs{$name} = $value;
+		  }
+        } 
+
         Authen::CAS::Client::Response::AuthSuccess->new(
           user    => $user,
           iou     => $iou,
           proxies => $proxies,
+          attributes => \%casAttrs,
           doc     => $doc,
         );
       };

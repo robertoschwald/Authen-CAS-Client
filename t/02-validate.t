@@ -2,7 +2,7 @@
 
 use lib '.';
 
-use Test::More tests => 93;
+use Test::More tests => 104;
 use t::MockUserAgent;
 
 use Authen::CAS::Client;
@@ -57,6 +57,11 @@ my %t = (
     success5 => {
       r => [ 200, _xml_success( 'USER', undef, [ ] ) ],
       v => [ 'S', 'USER', undef, [ ] ],
+    },
+
+    success6 => {
+      r => [ 200, _xml_success( 'USER', undef, 'attr', [ qw/ p1 p2 / ] ) ],
+      v => [ 'S', 'USER', undef, [ qw/ p1 p2 / ] ],
     },
 
     failure1 => {
@@ -123,7 +128,7 @@ sub _v_response {
   my ( $t, $r, $o, @a ) = @_;
 
   if( $o eq 'S' ) {
-    my ( $u, $i, $p ) = @a;
+    my ( $u, $i, $p,$attr ) = @a;
     isa_ok( $r, 'Authen::CAS::Client::Response::AuthSuccess', $t );
     is( $r->user, $u, $t );
     if( defined $i ) {
@@ -135,6 +140,9 @@ sub _v_response {
     $p = [ ]
       unless defined $p;
     is( join( ',', $r->proxies ), join( ',', @$p ), $t );
+    $attr = [ ]
+      unless defined $attr;
+    is( join( ',', $r->attributes ), join( ',', @$attr ), $t );
   }
   elsif( $o eq 'F' ) {
     my ( $c, $m ) = @a;
@@ -150,7 +158,7 @@ sub _v_response {
 }
 
 sub _xml_success {
-  my ( $u, $i, $p ) = @_;
+  my ( $u, $i, $p, $attr ) = @_;
 
   my $xml = q{
     <cas:serviceResponse xmlns:cas='http://www.yale.edu/tp/cas'>
@@ -168,6 +176,12 @@ sub _xml_success {
     $xml .= "<cas:proxy>$_</cas:proxy>"
       for @$p;
     $xml .= "</cas:proxies>";
+  }
+  if( defined $attr ) {
+    $xml .= "<cas:attributes>";
+    $xml .= "<cas:$_>$_</cas:$_>"
+      for @$attr;
+    $xml .= "</cas:attributes>";
   }
 
   $xml .= q{
