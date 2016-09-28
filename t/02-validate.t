@@ -127,7 +127,7 @@ sub _v_response {
   my ( $t, $r, $o, @a ) = @_;
 
   if( $o eq 'S' ) {
-    my ( $u, $i, $p,$attr ) = @a;
+    my ( $u, $i, $p, $attr ) = @a;
     isa_ok( $r, 'Authen::CAS::Client::Response::AuthSuccess', $t );
     is( $r->user, $u, $t );
     if( defined $i ) {
